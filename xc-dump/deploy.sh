@@ -2,11 +2,11 @@
 
 LAMBDA_FUNCTION_NAME="excamera-xc-dump"
 LAMBDA_HANDLER="excamera-xc-dump.lambda_handler"
-LAMBDA_ROLE="arn:aws:iam::785126971007:role/serverless_role"
+LAMBDA_ROLE=$AWS_ROLE
 LAMBDA_RUNTIME="python3.9"
 LAMBDA_MEMORY_SIZE=1024
 LAMBDA_TIMEOUT=180
-ZIP_FILE="/home/handsonhuang/excamera_step_function/xc-dump/excamera-xc-dump.zip"
+ZIP_FILE="excamera-xc-dump.zip"
 LAMBDA_DESCRIPTION="excamera-xc-dump"
 
 # if the zip file already exists, delete it first

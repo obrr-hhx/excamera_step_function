@@ -2,11 +2,11 @@
 
 LAMBDA_FUNCTION_NAME="excamera-xc-enc-rebase-03"
 LAMBDA_HANDLER="excamera-xc-enc-rebase-03.lambda_handler"
-LAMBDA_ROLE="arn:aws:iam::785126971007:role/serverless_role"
+LAMBDA_ROLE=$AWS_ROLE
 LAMBDA_RUNTIME="python3.9"
 LAMBDA_MEMORY_SIZE=1024
 LAMBDA_TIMEOUT=180
-ZIP_FILE="/home/handsonhuang/excamera_step_function/xc-enc-rebase/xc-enc-rebase-03/excamera-xc-enc-rebase-03.zip"
+ZIP_FILE="excamera-xc-enc-rebase-03.zip"
 LAMBDA_DESCRIPTION="excamera-xc-enc-rebase-00000003"
 
 # delete the zip file if it already exists\
@@ -34,4 +34,3 @@ aws lambda create-function \
     --memory-size $LAMBDA_MEMORY_SIZE \
     --timeout $LAMBDA_TIMEOUT \
     --description $LAMBDA_DESCRIPTION 
-    # --ephemeral-storage '{"Size": 10240}' 

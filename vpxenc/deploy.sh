@@ -2,11 +2,11 @@
 
 LAMBDA_FUNCTION_NAME="excamera-vpxenc"
 LAMBDA_HANDLER="excamera-vpxenc.lambda_handler"
-LAMBDA_ROLE="arn:aws:iam::785126971007:role/serverless_role"
+LAMBDA_ROLE=$AWS_ROLE
 LAMBDA_RUNTIME="python3.9"
 LAMBDA_MEMORY_SIZE=1024
 LAMBDA_TIMEOUT=180
-ZIP_FILE="/home/handsonhuang/excamera_step_function/vpxenc/excamera-vpxenc.zip"
+ZIP_FILE="excamera-vpxenc.zip"
 LAMBDA_DESCRIPTION="excamera-vpxenc"
 
 # ir the zip file already exists, delete it first

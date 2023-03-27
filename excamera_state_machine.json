@@ -1,0 +1,320 @@
+{
+    "Comment": "A state machine that compelete one type work flow of excamera",
+    "StartAt": "stage1",
+    "States": {
+      "stage1": {
+        "Type": "Map",
+        "InputPath": "$",
+        "ItemsPath": "$.video",
+        "ItemSelector": {
+          "video.$": "$$.Map.Item.Value",
+          "bucket": "your_bucket_name"
+        },
+        "ResultSelector": {
+          "vpxenc.$": "$.[*].vpxencResult.vpxenc",
+          "xc-terminate-chunk.$": "$.[*].xc-terminate-chunkResult.xc-terminate-chunk",
+          "xc-dump.$": "$.[*].xc-dumpResult.xc-dump"
+        },
+        "ResultPath": "$.Stage1Result",
+        "ItemProcessor": {
+          "ProcessorConfig": {
+            "Mode": "INLINE"
+          },
+          "StartAt": "vpxenc",
+          "States": {
+            "vpxenc": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "ResultSelector": {
+                "vpxenc.$": "$.Payload.vpxenc"
+              },
+              "ResultPath": "$.vpxencResult",
+              "OutputPath": "$",
+              "Parameters": {
+                "FunctionName": "the arn of your vpxenc lambda function",
+                "Payload": {
+                  "video.$": "$.video",
+                  "bucket.$": "$.bucket"
+                }
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "Next": "xc-terminate-chunk"
+            },
+            "xc-terminate-chunk": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "ResultSelector": {
+                "xc-terminate-chunk.$": "$.Payload.xc-terminate-chunk"
+              },
+              "ResultPath": "$.xc-terminate-chunkResult",
+              "OutputPath": "$",
+              "Parameters": {
+                "Payload": {
+                  "vpxenc.$": "$.vpxencResult.vpxenc",
+                  "bucket.$": "$.bucket"
+                },
+                "FunctionName": "the arn of your xc-terminate-chunk lambda function"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "Next": "xc-dump"
+            },
+            "xc-dump": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "ResultSelector": {
+                "xc-dump.$": "$.Payload.xc-dump"
+              },
+              "ResultPath": "$.xc-dumpResult",
+              "OutputPath": "$",
+              "Parameters": {
+                "Payload": {
+                  "xc-terminate-chunk.$": "$.xc-terminate-chunkResult.xc-terminate-chunk",
+                  "bucket.$": "$.bucket"
+                },
+                "FunctionName": "the arn of your xc-dump lambda function"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "End": true
+            }
+          }
+        },
+        "Next": "reencode-first-frame"
+      },
+      "reencode-first-frame": {
+        "Type": "Parallel",
+        "Branches": [
+          {
+            "StartAt": "xc-enc-00000001",
+            "States": {
+              "xc-enc-00000001": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::lambda:invoke",
+                "ResultSelector": {
+                  "xc-enc-00000001-ivf.$": "$.Payload.xc-enc-ivf",
+                  "xc-enc-00000001-state.$": "$.Payload.xc-enc-state"
+                },
+                "ResultPath": "$.reencode-00000001",
+                "OutputPath": "$.reencode-00000001",
+                "Parameters": {
+                  "FunctionName": "the arn of your xc-enc lambda function",
+                  "Payload": {
+                    "bucket.$": "$.bucket",
+                    "video.$": "$.video[1]",
+                    "xc-terminate-chunk.$": "$.xc-terminate-chunk[1]",
+                    "xc-dump.$": "$.xc-dump[0]"
+                  }
+                },
+                "Retry": [
+                  {
+                    "ErrorEquals": [
+                      "Lambda.ServiceException",
+                      "Lambda.AWSLambdaException",
+                      "Lambda.SdkClientException",
+                      "Lambda.TooManyRequestsException"
+                    ],
+                    "IntervalSeconds": 2,
+                    "MaxAttempts": 6,
+                    "BackoffRate": 2
+                  }
+                ],
+                "End": true
+              }
+            }
+          },
+          {
+            "StartAt": "xc-enc-00000002",
+            "States": {
+              "xc-enc-00000002": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::lambda:invoke",
+                "ResultSelector": {
+                  "xc-enc-00000002-ivf.$": "$.Payload.xc-enc-ivf"
+                },
+                "ResultPath": "$.reencode-00000002",
+                "OutputPath": "$.reencode-00000002",
+                "Parameters": {
+                  "Payload": {
+                    "video.$": "$.video[2]",
+                    "bucket.$": "$.bucket",
+                    "xc-terminate-chunk.$": "$.xc-terminate-chunk[2]",
+                    "xc-dump.$": "$.xc-dump[1]"
+                  },
+                  "FunctionName": "the arn of your xc-enc-reencode lambda function"
+                },
+                "Retry": [
+                  {
+                    "ErrorEquals": [
+                      "Lambda.ServiceException",
+                      "Lambda.AWSLambdaException",
+                      "Lambda.SdkClientException",
+                      "Lambda.TooManyRequestsException"
+                    ],
+                    "IntervalSeconds": 2,
+                    "MaxAttempts": 6,
+                    "BackoffRate": 2
+                  }
+                ],
+                "End": true
+              }
+            }
+          },
+          {
+            "StartAt": "xc-enc-00000003",
+            "States": {
+              "xc-enc-00000003": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::lambda:invoke",
+                "ResultSelector": {
+                  "xc-enc-00000003-ivf.$": "$.Payload.xc-enc-ivf"
+                },
+                "ResultPath": "$.reencode-00000003",
+                "OutputPath": "$.reencode-00000003",
+                "Parameters": {
+                  "Payload": {
+                    "video.$": "$.video[3]",
+                    "bucket.$": "$.bucket",
+                    "xc-terminate-chunk.$": "$.xc-terminate-chunk[3]",
+                    "xc-dump.$": "$.xc-dump[2]"
+                  },
+                  "FunctionName": "the arn of your xc-enc-reencode lambda function"
+                },
+                "Retry": [
+                  {
+                    "ErrorEquals": [
+                      "Lambda.ServiceException",
+                      "Lambda.AWSLambdaException",
+                      "Lambda.SdkClientException",
+                      "Lambda.TooManyRequestsException"
+                    ],
+                    "IntervalSeconds": 2,
+                    "MaxAttempts": 6,
+                    "BackoffRate": 2
+                  }
+                ],
+                "End": true
+              }
+            }
+          }
+        ],
+        "Next": "xc-enc-rebase-00000002",
+        "Parameters": {
+          "video.$": "$.video",
+          "bucket.$": "$.bucket",
+          "vpxenc.$": "$.Stage1Result.vpxenc",
+          "xc-terminate-chunk.$": "$.Stage1Result.xc-terminate-chunk",
+          "xc-dump.$": "$.Stage1Result.xc-dump"
+        },
+        "ResultSelector": {
+          "xc-enc-00000001-ivf.$": "$.[0].xc-enc-00000001-ivf",
+          "xc-enc-00000001-state.$": "$.[0].xc-enc-00000001-state",
+          "xc-enc-00000002-ivf.$": "$.[1].xc-enc-00000002-ivf",
+          "xc-enc-00000003-ivf.$": "$.[2].xc-enc-00000003-ivf"
+        },
+        "ResultPath": "$.Stage2Result",
+        "OutputPath": "$"
+      },
+      "xc-enc-rebase-00000002": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::lambda:invoke",
+        "ResultSelector": {
+          "rebase-00000002-ivf.$": "$.Payload.xc-enc-ivf",
+          "rebase-00000002-state.$": "$.Payload.xc-enc-state"
+        },
+        "ResultPath": "$.rebase-00000002-result",
+        "OutputPath": "$",
+        "Parameters": {
+          "Payload": {
+            "video.$": "$.video[2]",
+            "bucket.$": "$.bucket",
+            "xc-enc-00000002.$": "$.Stage2Result.xc-enc-00000002-ivf",
+            "xc-dump.$": "$.Stage1Result.xc-dump[1]",
+            "xc-enc-00000001.$": "$.Stage2Result.xc-enc-00000001-state"
+          },
+          "FunctionName": "the arn of your xc-enc-rebase lambda function for 00000002.y4m"
+        },
+        "Retry": [
+          {
+            "ErrorEquals": [
+              "Lambda.ServiceException",
+              "Lambda.AWSLambdaException",
+              "Lambda.SdkClientException",
+              "Lambda.TooManyRequestsException"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 6,
+            "BackoffRate": 2
+          }
+        ],
+        "Next": "xc-enc-rebase-00000003"
+      },
+      "xc-enc-rebase-00000003": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::lambda:invoke",
+        "ResultSelector": {
+          "rebase-00000003-ivf.$": "$.Payload.xc-enc-ivf"
+        },
+        "ResultPath": "$.rebase-00000003-result",
+        "OutputPath": "$",
+        "Parameters": {
+          "Payload": {
+            "video.$": "$.video[3]",
+            "bucket.$": "$.bucket",
+            "xc-enc-00000003.$": "$.Stage2Result.xc-enc-00000003-ivf",
+            "xc-dump.$": "$.Stage1Result.xc-dump[2]",
+            "xc-enc-rebase.$": "$.rebase-00000002-result.rebase-00000002-state"
+          },
+          "FunctionName": "the arn of your xc-enc-rebase lambda function for 00000003.y4m"
+        },
+        "Retry": [
+          {
+            "ErrorEquals": [
+              "Lambda.ServiceException",
+              "Lambda.AWSLambdaException",
+              "Lambda.SdkClientException",
+              "Lambda.TooManyRequestsException"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 6,
+            "BackoffRate": 2
+          }
+        ],
+        "End": true
+      }
+    }
+  }

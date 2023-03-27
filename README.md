@@ -12,6 +12,40 @@ This example uses four y4m files to execute the state machine, you can also get 
 
 what should be input to the state machine when executing is the input.json file. It just contains the s3 bucket name and your y4m file name.
 
+## Lambda function
+
+There are four bianry executable files actully which is vpxenc, xc-terminate-chunk, xc-dump and xc-enc, although I deploy seven lambda function to compelete the work flow to process the video.
+
+From the Makefile, you can find there are three stages to execute:
+
+### stage 1: vpxenc
+
+using the vpxenc, xc-terminate-chunk and xc-dump to generate the .ivf file and .state file.
+
+I use the map state in aws step function to do this stage tasks.
+
+Which are used in this stage:
+- vpxenc
+- xc-terminate-chunk
+- xc-dump
+
+### stage 2: reencode-first-frame
+
+As the title says, this stage's task is to re-encode the first frame. And I use the parallel state to accomplish.
+
+Which are used in this stage:
+- xc-enc
+- xc-enc-reencode
+
+### stage 3: rebase
+
+The lambda functions of xc-rebase are serial executed to rebase the frame.
+
+Which are used in this stage:
+- xc-enc-rebase
+    - xc-enc-rebase-02
+    - xc-enc-rebase-03
+
 ## Log
 
 The Log.py generates a unique name for the log file when correlative lambda function is executing and records the time of downloading the y4m file, executing and uploading. It also writes down the name and size of each download and upload file.

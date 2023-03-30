@@ -50,6 +50,15 @@ Which are used in this stage:
     - xc-enc-rebase-02
     - xc-enc-rebase-03
 
+you can deploy these function just using the follow command
+
+```shell
+git clone https://github.com/obrr-hhx/excamera_step_function.git
+export AWS_ROLE='your aws role'
+cd ./excamera_step_funcion
+./deployAll.sh
+```
+
 ## Log
 
 The Log.py generates a unique name for the log file when correlative lambda function is executing and records the time of downloading the y4m file, executing and uploading. It also writes down the name and size of each download and upload file.

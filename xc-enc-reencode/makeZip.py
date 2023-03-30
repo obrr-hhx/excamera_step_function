@@ -3,12 +3,13 @@
 import os
 import zipfile
 
+current_path = os.path.dirname(os.path.abspath(__file__)) + '/'
+
 def makeZip():
-    file_name = ['excamera-xc-enc-reencode.py', 'xc-enc', '/home/handsonhuang/excamera_step_function/Log.py']
-    zip_file_name = 'excamera-xc-enc-reencode.zip'
+    file_name = [current_path+'excamera-xc-enc-reencode.py', current_path+'xc-enc', current_path+'../Log.py']
+    zip_file_name = current_path+'excamera-xc-enc-reencode.zip'
     zip_file = zipfile.ZipFile(zip_file_name, 'w')
-    # for file in file_name:
-        # zip_file.write(file)
+    
     for file in file_name:
         if file.startswith('/'):
             # just write the file name, not the full path

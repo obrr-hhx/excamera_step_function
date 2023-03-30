@@ -4,11 +4,11 @@ import os
 import zipfile
 
 # get the current path
-current_path = os.path.dirname(os.path.abspath(__file__))
+current_path = os.path.dirname(os.path.abspath(__file__)) + '/'
 
 def makeZip():
-    file_name = ['excamera-xc-enc.py', 'xc-enc', current_path+'/../Log.py']
-    zip_file_name = 'excamera-xc-enc.zip'
+    file_name = [current_path+'excamera-xc-enc.py', current_path+'xc-enc', current_path+'../Log.py']
+    zip_file_name = current_path+'excamera-xc-enc.zip'
     zip_file = zipfile.ZipFile(zip_file_name, 'w')
     for file in file_name:
         if file.startswith('/'):

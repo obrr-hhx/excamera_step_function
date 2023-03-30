@@ -22,45 +22,57 @@ import time
 
 class Log:
     # log initialization
-    def __init__(self, bucket_name, log_file_name):
+    def __init__(self, bucket_name, log_file_name, start_time):
         self.bucket_name = bucket_name
         self.log_file_name = log_file_name
+        self.start_time = start_time
         self.download_file_name = []
+        self.start_download = []
+        self.end_download = []
         self.download_file_size = []
         self.upload_file_name = []
         self.upload_file_size = []
+        self.start_upload = []
+        self.end_upload = []
 
-    def log_download(self, download_time, download_file_name, download_file_size):
-        self.download_time = download_time
+    def log_download(self, start, end, download_file_name, download_file_size):
+        self.start_download.append(start)
+        self.end_download.append(end)
         self.download_file_name.append(download_file_name)
         self.download_file_size.append(download_file_size)
 
-    def log_execute(self, execute_time, command):
-        self.execute_time = execute_time
+    def log_execute(self, start, end, command):
+        self.start_execute = start
+        self.end_execute = end
+        self.execute_time = end-start
         self.command = command
 
-    def log_upload(self, upload_time, upload_file_name, upload_file_size):
-        if type(upload_time) != type(time.time()):
+    def log_upload(self, start, end, upload_file_name, upload_file_size):
+        if type(start) != type(time.time()):
+            raise TypeError("Upload time must be a floats")
+        if type(end) != type(time.time()):
             raise TypeError("Upload time must be a floats")
         if type(upload_file_name) != str:
             raise TypeError("Upload file name must be a string")
         if type(upload_file_size) != int:
             raise TypeError("Upload file size must be an integer")
-        self.upload_time = upload_time
-        self.upload_file_name = upload_file_name
-        self.upload_file_size = upload_file_size
+        self.start_upload.append(start)
+        self.end_upload.append(end)
+        self.upload_file_name.append(upload_file_name)
+        self.upload_file_size.append(upload_file_size)
     
     # generate the log file and upload it to S3
     def log(self):
         log_content = 'id ' + self.log_file_name + '\n'
-        log_content += 'download_time ' + str(self.download_time) + '\n'
-        log_content += 'execute_time ' + str(self.execute_time) + '\n'
-        log_content += 'upload_time ' + str(self.upload_time) + '\n'
+        log_content += 'start_time ' + str(self.start_time) + '\n'
+        log_content += 'execute_time_start ' + str(self.start_execute) + '\n'
+        log_content += 'execute_time_end ' + str(self.end_execute) + '\n'
+        
         
         for i in range(len(self.download_file_name)):
-            log_content += 'download_file_name ' + self.download_file_name[i] + ' ' + str(self.download_file_size[i]) + '\n'
+            log_content += 'download_file ' + self.download_file_name[i] + ' ' + str(self.download_file_size[i]) + ' ' + str(self.start_download[i]) + ' ' + str(self.end_download[i]) + '\n'
         for i in range(len(self.upload_file_name)):
-            log_content += 'upload_file_name ' + self.upload_file_name[i] + ' ' + str(self.upload_file_size[i]) + '\n'
+            log_content += 'upload_file ' + self.upload_file_name[i] + ' ' + str(self.upload_file_size[i]) + ' ' + str(self.start_upload[i]) + ' ' + str(self.end_upload[i]) + '\n'
         
         log_content += 'command '
         for i in range(len(self.command)):
@@ -75,4 +87,4 @@ class Log:
 
         # upload the log file to S3 directory which is named 'log/'
         s3_client = boto3.client('s3')
-        s3_client.upload_file('/tmp/'+self.log_file_name, self.bucket_name, 'log/'+self.log_file_name)
+        s3_client.upload_file('/tmp/'+self.log_file_name, self.bucket_name, 'log/'+self.log_file_name+'.log')

@@ -1,12 +1,14 @@
 #!/bin/bash
 
+current_path=$(dirname $(readlink -f $0))
+
 LAMBDA_FUNCTION_NAME="excamera-xc-enc-rebase-02"
 LAMBDA_HANDLER="excamera-xc-enc-rebase-02.lambda_handler"
 LAMBDA_ROLE=$AWS_ROLE
 LAMBDA_RUNTIME="python3.9"
 LAMBDA_MEMORY_SIZE=1024
 LAMBDA_TIMEOUT=180
-ZIP_FILE="xc-enc-rebase-02/excamera-xc-enc-rebase-02.zip"
+ZIP_FILE="$current_path/excamera-xc-enc-rebase-02.zip"
 LAMBDA_DESCRIPTION="excamera-xc-enc-rebase-00000002"
 
 # delete the zip file if it already exists
@@ -16,7 +18,7 @@ if [ -f $ZIP_FILE ]; then
 fi
 
 # Create the zip file
-python3 makeZip.py
+python3 $current_path/makeZip.py
 
 # if the lambda function already exists, delete it first
 if aws lambda get-function --function-name $LAMBDA_FUNCTION_NAME; then

@@ -8,8 +8,8 @@ import zipfile
 current_path = os.path.dirname(os.path.abspath(__file__))
 
 def makeZip():
-    file_name = ['excamera-vpxenc.py', 'vpxenc', current_path+'/../Log.py']
-    zip_file_name = 'excamera-vpxenc.zip'
+    file_name = [current_path+'/excamera-vpxenc.py', current_path+'/vpxenc', current_path+'/../Log.py']
+    zip_file_name = current_path+'/excamera-vpxenc.zip'
     zip_file = zipfile.ZipFile(zip_file_name, 'w')
     for file in file_name:
         if file.startswith('/'):
